@@ -28,7 +28,7 @@ def authorize_api_key(key, request_type):
             .execute()
         )
         if len(data.get("data")) > 0:
-            user_id = data.get("data")[0]
+            user_id = data.get("data")[0]["id"]
             make_request(user_id, request_type)
             return None
         else:
@@ -36,14 +36,17 @@ def authorize_api_key(key, request_type):
     else:
         return None
 
-    return False
-
 
 def make_request(user_id, type):
     """
     Add the request to the users total requests
     """
-    supabase.table("requests").insert({"user_id": user_id, "type": type}).execute()
+
+    data = (
+        supabase.table("requests").insert({"user_id": user_id, "type": type}).execute()
+    )
+
+    assert data.get("status_code") in (200, 201)
 
 
 # home endpoint
