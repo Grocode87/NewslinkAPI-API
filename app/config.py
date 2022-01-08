@@ -37,12 +37,12 @@ class ProductionConfig(Config):
     DEBUG = True
     TESTING = False
     SQLALCHEMY_DATABASE_URI = "mysql://{0}:{1}@{2}/{3}".format(
-        "colin", "Hunter1?23", "localhost:3306", "news"
+        "colin", "Hunter1?234", "localhost:3306", "news"
     )
 
     REQUIRE_API_KEY = True
-    SUPABASE_URL = "my-url-to-my-awesome-supabase-instance"
-    SUPABASE_KEY = "my-supa-dupa-secret-supabase-api-key"
+    SUPABASE_URL = "https://rltpyqhebpfhfmbwaeoj.supabase.co"
+    SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTYzNzYzMzUwMywiZXhwIjoxOTUzMjA5NTAzfQ.qCm7EeAuAqzz4cgdMD-ncrgzccslH78xSTpmE8-JQeo"
 
 
 config_by_name = dict(dev=DevelopmentConfig, test=TestingConfig, prod=ProductionConfig)
