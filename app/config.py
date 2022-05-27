@@ -37,7 +37,7 @@ class ProductionConfig(Config):
     DEBUG = True
     TESTING = False
     SQLALCHEMY_DATABASE_URI = "mysql://{0}:{1}@{2}/{3}".format(
-        "root", "Hunter1?23", "localhost:3306", "news"
+        "colin", "Hunter1?234", "localhost:3306", "news"
     )
 
     REQUIRE_API_KEY = True
