@@ -164,4 +164,4 @@ def search():
     if type(results) == list:
         return jsonify({"status": "ok", "numResults": len(results), "results": results})
     else:
-        return results
+        return jsonify({results})
