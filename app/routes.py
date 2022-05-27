@@ -72,7 +72,7 @@ def make_request(user_id, type):
 
 
 # home endpoint
-@app.route("/")
+@app.route("/api/1")
 def index():
     return """
            <h3>Newslink API </h3>
@@ -81,7 +81,7 @@ def index():
 
 
 # /top endpoint
-@app.route("/top-stories")
+@app.route("/api/1/top-stories")
 @api_required
 @log_request("top_stories")
 def top():
@@ -106,7 +106,7 @@ def top():
 
 
 # /search endpoint
-@app.route("/search/")
+@app.route("/api/1/search/")
 @api_required
 @log_request("search")
 def search():
@@ -150,4 +150,4 @@ def search():
     if type(results) == list:
         return jsonify({"status": "ok", "numResults": len(results), "results": results})
     else:
-        return stories
+        return results
