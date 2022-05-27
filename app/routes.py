@@ -80,21 +80,6 @@ def index():
            """
 
 
-@app.route("/api/1/test")
-@api_required
-def test_route():
-    return """
-            TESTING
-           """
-
-
-@app.route("/api/1/test2")
-def test_route_2():
-    return """
-            TESTING 2
-           """
-
-
 # /top endpoint
 @app.route("/api/1/top-stories")
 @api_required
