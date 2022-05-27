@@ -7,8 +7,10 @@ from flask import Flask
 from flask_caching import Cache
 
 from supabase import create_client
-
+from dotenv import load_dotenv
 import os
+
+load_dotenv()  # take environment variables from .env.
 
 app = Flask(__name__)
 

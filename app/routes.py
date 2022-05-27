@@ -80,7 +80,7 @@ def index():
            """
 
 
-@app.route("api/1/test")
+@app.route("/api/1/test")
 @api_required
 def test_route():
     return """
@@ -88,7 +88,7 @@ def test_route():
            """
 
 
-@app.route("api/1/test2")
+@app.route("/api/1/test2")
 def test_route_2():
     return """
             TESTING 2
