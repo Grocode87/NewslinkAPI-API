@@ -4,9 +4,12 @@ from flask import jsonify, request
 
 
 from .modules.top_stories.top_stories import get_top_stories
-from .modules.search.search import search_stories, search_articles
+from .modules.search.search import (
+    search_stories,
+    search_articles,
+)
 from .security import api_required, log_request
-
+from .exceptions import BadRequestException
 
 from .utils.timer import Timer
 
@@ -127,26 +130,37 @@ def search():
     - page
     - pageSize
     """
-    apiKey = request.args.get("apiKey")
-    q = request.args.get("q")
-    qInTitle = request.args.get("qInTitle")
 
-    dateFrom = request.args.get("from")
-    dateTo = request.args.get("to")
+    q = request.args.get("q")
+    category = request.args.get("category")
+
+    dateFrom = request.args.get("dateFrom")
+    dateTo = request.args.get("dateTo")
     sortBy = request.args.get("sortBy")
-    resultType = request.args.get("resultType", default="story")
+    resType = request.args.get("resType", default="story")
 
     page = request.args.get("page", default=0, type=int)
     pageSize = request.args.get("pageSize", default=10, type=int)
 
-    if resultType == "article":
-        results = search_articles(q, qInTitle, dateFrom, dateTo, sortBy, page, pageSize)
-    elif resultType == "story":
-        results = search_stories(q, qInTitle, dateFrom, dateTo, sortBy, page, pageSize)
-    else:
-        return jsonify({"status": "error", "message": "Incorrect result type"})
+    # if resType == "article":
+    try:
+        if resType == "article":
+            results = search_articles(q, category, dateFrom, dateTo, sortBy)
+        elif resType == "story":
+            results = search_stories(q, category, dateFrom, dateTo, sortBy)
+    except BadRequestException as e:
+        return {
+            "status": "error",
+            "message": "Bad Request. " + str(e),
+            "code": 400,
+        }, 400
 
-    if type(results) == list:
-        return jsonify({"status": "ok", "numResults": len(results), "results": results})
-    else:
-        return jsonify({results})
+    return jsonify(
+        {
+            "status": "ok",
+            "totalResults": len(results),
+            "results": [
+                r.serialize() for r in results[page * pageSize : (page + 1) * pageSize]
+            ],
+        }
+    )

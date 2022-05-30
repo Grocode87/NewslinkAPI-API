@@ -3,113 +3,101 @@ from ...models import Article, Cluster, ClusterArticle
 from sqlalchemy import or_
 from datetime import datetime
 from dateutil import parser
+from .advanced_search_parser import get_sqlalch_filter_query
+from ...exceptions import BadRequestException
 
 
-def search_articles(q, qInTitle, dateFrom, dateTo, sortBy, page, pageSize):
+def get_date(date_string):
+    try:
+        parser.parse(date_string)
+    except:
+        raise BadRequestException(
+            "date is in an invalid format, please use ISO 8601 format (e.g. 2022-05-23 or 2022-05-23T01:45:56)"
+        )
+
+
+def search_articles(q, category, dateFrom, dateTo, sortBy):
     query = Article.query
 
+    # P1: query filters
     if q:
-        query = query.filter(
-            or_(
-                Article.title.like("%" + q + "%"),
-                Article.description.like("%" + q + "%"),
-            )
-        )
+        query = query.filter(get_sqlalch_filter_query(q, Article.title.like))
+    if category:
+        query = query.filter(Article.category == category)
 
-    elif qInTitle:
-        query = query.filter(Article.title.like("%" + qInTitle + "%"))
-
-    # try parsing dateFrom and dateTo strings, return error if fail
+    # P2: date filters
     if dateFrom:
-        try:
-            dateFrom = parser.parse(dateFrom)
-            query = query.filter(Article.date_created > dateFrom)
-        except:
-            return {
-                "status": "error",
-                "message": "dateFrom is in an invalid format, please use (YYYY-MM-DD HH:MM:SS)",
-            }
-    if dateTo:
-        try:
-            dateTo = parser.parse(dateTo)
-            query = query.filter(Article.date_created < dateTo)
-        except:
-            return {
-                "status": "error",
-                "message": "dateTo is in an invalid format, please use (YYYY-MM-DD HH:MM:SS)",
-            }
+        date_from = get_date(dateFrom)
+        query = query.filter(Article.date_created >= date_from)
 
-    if sortBy == "Oldest":
+    if dateTo:
+        date_to = get_date(dateTo)
+        query = query.filter(Article.date_created <= date_to)
+
+    # P3: sorting by sortBy
+    if sortBy == "oldest":
         query = query.order_by(Article.date_created.asc())
-    else:  # sortBy == "Newest"
+    elif sortBy == "newest":
         query = query.order_by(Article.date_created.desc())
 
-    query = query.limit((page * pageSize) + pageSize)
-    articles = query.all()[page * pageSize :]
+    # NOT IMPLEMENTED, NEED TO CREATE A SYSTEM THAT COUNTS QUERY MATCHES
+    elif sortBy == "relevance":
+        query = query.order_by(Article.date_created.desc())
 
-    return [a.serialize() for a in articles]
+    # NOT IMPLEMENTED, NEED METRIC TO DETERMINE ARTICLE's STORY POPULARITY
+    elif sortBy == "popularity":
+        query = query.order_by(Article.date_created.desc())
+
+    elif not sortBy:  # default: newest
+        query = query.order_by(Article.date_created.desc())
+    else:
+        raise BadRequestException("Invalid sortBy parameter")
+
+    results = query.all()
+
+    return results
 
 
-def search_stories(q, qInTitle, dateFrom, dateTo, sortBy, page, pageSize):
-    """
-    params:
-
-    q: keyword or phrase to look for in article title and body
-    qInTitle: keyword or phrase to look for only in article titles
-    dateFrom: A date and optional time for the oldest article allowed. In ISO 8601 format (e.g. 2021-12-25 or 2021-12-25T04:21:35)
-    dateTo: A date and optional time for the newest article allowed. In ISO 8601 format (e.g. 2021-12-25 or 2021-12-25T04:21:35)
-
-    sortBy:
-        the order to sort the results in, options are
-        Newest (default) : newest articles/stories come first
-        Oldest: oldest articles/stories come first
-        Relevency: articles most closely matching q come first
-
-    page: the page of results (for pagination, make sure to use it with dateTo) (default: 0)
-    pageSize: number of results per page (default: 10)
-
-    """
+def search_stories(q, category, dateFrom, dateTo, sortBy):
     query = Cluster.query
 
+    # P1: query filters
     if q:
-        query = query.filter(
-            or_(
-                Cluster.articles.any(Article.title.like("%" + q + "%")),
-                Cluster.articles.any(Article.description.like("%" + q + "%")),
-            )
-        )
 
-    elif qInTitle:
-        query = query.filter(
-            Cluster.articles.any(Article.title.like("%" + qInTitle + "%"))
-        )
+        def filter_param(query):
+            return Cluster.articles.any(Article.title.like(query))
 
-    # try parsing dateFrom and dateTo strings, return error if fail
+        query = query.filter(get_sqlalch_filter_query(q, filter_param))
+    if category:
+        query = query.filter(Cluster.category == category)
+
+    # P2: date filters
     if dateFrom:
-        try:
-            dateFrom = parser.parse(dateFrom)
-            query = query.filter(Cluster.last_updated > dateFrom)
-        except:
-            return {
-                "status": "error",
-                "message": "dateFrom is in an invalid format, please use (YYYY-MM-DD HH:MM:SS)",
-            }
-    if dateTo:
-        try:
-            dateTo = parser.parse(dateTo)
-            query = query.filter(Cluster.last_updated < dateTo)
-        except:
-            return {
-                "status": "error",
-                "message": "dateTo is in an invalid format, please use (YYYY-MM-DD HH:MM:SS)",
-            }
+        date_from = get_date(dateFrom)
+        query = query.filter(Cluster.last_updated >= date_from)
 
-    if sortBy == "Oldest":
+    if dateTo:
+        date_to = get_date(dateTo)
+        query = query.filter(Cluster.last_updated <= date_to)
+
+    # P3: sorting by sortBy
+    if sortBy == "oldest":
         query = query.order_by(Cluster.last_updated.asc())
-    else:  # sortBy == "Newest"
+    elif sortBy == "newest":
         query = query.order_by(Cluster.last_updated.desc())
 
-    query = query.limit((page * pageSize) + pageSize)
-    clusters = query.all()[page * pageSize :]
+    # NOT IMPLEMENTED, NEED TO CREATE A SYSTEM THAT COUNTS QUERY MATCHES
+    elif sortBy == "relevance":
+        query = query.order_by(Cluster.last_updated.desc())
 
-    return [c.serialize() for c in clusters]
+    elif sortBy == "popularity":
+        query = query.order_by(Cluster.rank.desc())
+
+    elif not sortBy:  # default: newest
+        query = query.order_by(Cluster.last_updated.desc())
+    else:
+        raise BadRequestException("Invalid sortBy parameter")
+
+    results = query.all()
+
+    return results
