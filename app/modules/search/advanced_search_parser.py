@@ -147,6 +147,19 @@ def validate_expression(expression):
     if not level == 0:
         return False
 
+    opened = False
+    for char in expression:
+        if char == "[":
+            if opened:
+                return False
+            else:
+                opened = True
+        elif char == "]":
+            if not opened:
+                return False
+            else:
+                opened = False
+
     return True
 
 
