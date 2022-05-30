@@ -52,7 +52,6 @@ def build_parse_tree(expression):
 
             elif token in OPERATORS:
                 if "right" in node:
-                    print(node["right"])
                     node["right"] = {"val": token, "left": node["right"], "right": {}}
                     stack.append(node["right"])
                     node = node["right"]["right"]
@@ -86,7 +85,7 @@ def build_str_query(parse_tree):
         return parse_tree["val"]
 
 
-def build_query(parse_tree, filter_param):
+def build_query(parse_tree, cluster):
     """
     Given a parse tree, build an sqlalchemy nested query using or_ and and_ functions
     """
@@ -95,19 +94,41 @@ def build_query(parse_tree, filter_param):
     if "left" in parse_tree and "right" in parse_tree:
         operator = OPERATORS[parse_tree["val"]]
         return_val = operator(
-            build_query(parse_tree["left"], filter_param),
-            build_query(parse_tree["right"], filter_param),
+            build_query(parse_tree["left"], cluster),
+            build_query(parse_tree["right"], cluster),
         )
 
         return return_val
     elif not "val" in parse_tree and "left" in parse_tree:
-        return build_query(parse_tree["left"], filter_param)
+        return build_query(parse_tree["left"], cluster)
 
     elif not "left" in parse_tree and "right" in parse_tree:
         operator = OPERATORS[parse_tree["val"]]
-        return operator(build_query(parse_tree["right"], filter_param))
+        return operator(build_query(parse_tree["right"], cluster))
+
     else:
-        return filter_param("%" + parse_tree["val"] + "%")
+        val = parse_tree["val"]
+
+        if not "[" in val or not "]" in val:
+            val = val + " [title, description]"
+
+        search_in = val[val.index("[") + 1 : val.index("]")]
+        search_in = [s.strip() for s in search_in.split(",")]
+        val = val.split("[")[0].strip()
+
+        print(search_in)
+        search_in_funcs = []
+        if "title" in search_in:
+            search_in_funcs.append(Article.title.like(f"%{val}%"))
+        if "description" in search_in:
+            search_in_funcs.append(Article.description.like(f"%{val}%"))
+        if "content" in search_in:
+            search_in_funcs.append(Article.content.like(f"%{val}%"))
+
+        if cluster:
+            return Cluster.articles.any(or_(*search_in_funcs))
+        else:
+            return or_(*search_in_funcs)
 
 
 def validate_expression(expression):
@@ -130,7 +151,7 @@ def validate_expression(expression):
     return True
 
 
-def get_sqlalch_filter_query(expression, filter_param):
+def get_sqlalch_filter_query(expression, cluster=False):
     """
     Given an advanced search expression as defined in the API docs,sl
     return an sqlalchey filter expression
@@ -145,9 +166,7 @@ def get_sqlalch_filter_query(expression, filter_param):
         raise BadRequestException("Invalid query expression")
 
     parse_tree = build_parse_tree(expression)
-    print(parse_tree)
 
-    query = build_query(parse_tree, filter_param)
-    print(query)
+    query = build_query(parse_tree, cluster)
 
     return query

@@ -37,15 +37,15 @@ class Article(db.Model):
         top_entities = [e[0].serialize() for e in top_entities]
 
         return {
-            "id": self.id,
+            "type": "article",
             "title": self.title,
             "description": self.description,
             "source": self.source,
             "url": self.url,
-            "image_url": self.image_url,
-            "top_entities": top_entities[:5],
-            "date_created": self.date_created,
-            "entities": top_entities,
+            "urlToImage": self.image_url,
+            "topEntities": top_entities[:5],
+            "sentiment": 0,
+            "dateCreated": self.date_created,
         }
 
 
@@ -83,13 +83,13 @@ class Cluster(db.Model):
                 all_articles.append(a.serialize())
 
         return {
-            "id": self.id,
-            "top_article": top_article,
+            "type": "story",
+            "topArticle": top_article,
             "articles": all_articles,
-            "rank": self.rank,
             "category": self.category,
-            "date_created": self.date_created,
-            "entities": entities,
+            "dateCreated": self.date_created,
+            "sentiment": 0,
+            "topEntities": entities,
         }
 
 

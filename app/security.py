@@ -62,7 +62,7 @@ def api_required(func):
         if not verify_page_size(page_size, user_data):
             return {
                 "status": "error",
-                "message": "Bad Request. Contains a missing or misconfigured parameter",
+                "message": "Bad Request. Page size is larger than plan allows.",
                 "code": 400,
             }, 400
 
