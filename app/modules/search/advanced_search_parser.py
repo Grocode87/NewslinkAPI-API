@@ -116,7 +116,6 @@ def build_query(parse_tree, cluster):
         search_in = [s.strip() for s in search_in.split(",")]
         val = val.split("[")[0].strip()
 
-        print(search_in)
         search_in_funcs = []
         if "title" in search_in:
             search_in_funcs.append(Article.title.like(f"%{val}%"))

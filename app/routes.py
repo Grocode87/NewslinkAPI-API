@@ -61,7 +61,7 @@ def top():
 
 
 # /search endpoint
-@app.route("/api/1/search/")
+@app.route("/api/1/search")
 @api_required
 @log_request("search")
 def search():
